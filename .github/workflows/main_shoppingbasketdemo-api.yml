@@ -24,16 +24,16 @@ jobs:
           dotnet-version: "9.x"
 
       - name: Restore dependencies
-        run: dotnet restore API/ShoppingBasketAPI.csproj
+        run: dotnet restore API/API.csproj
 
       - name: Build with dotnet
-        run: dotnet build API/ShoppingBasketAPI.csproj --configuration Release --no-restore
+        run: dotnet build API/API.csproj --configuration Release --no-restore
 
       - name: Run tests
         run: dotnet test API_Tests/API_Tests.csproj --configuration Release --no-build --verbosity normal
 
       - name: dotnet publish
-        run: dotnet publish API/ShoppingBasketAPI.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp" --no-restore
+        run: dotnet publish API/API.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp" --no-restore
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
