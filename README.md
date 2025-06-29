@@ -1,5 +1,10 @@
 # Shopping Basket API
 
+Root folder/
+├────────── API/ # The API
+├────────── API_Tests/ # Suite of tests around the API services
+
+API:
 A REST-based Web API written in .NET 8 for an online shopping basket system with comprehensive features including VAT calculations, discounts, and shipping costs.
 
 ## Features
