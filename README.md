@@ -50,7 +50,7 @@ All basket operations return a `BasketResponse` object (see below) which provide
 1. Clone or download the project
 
    ```bash
-   cd ShoppingBasketAPI
+   cd API
    dotnet restore
    dotnet run
    ```

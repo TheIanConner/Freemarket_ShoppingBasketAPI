@@ -5,30 +5,25 @@ using ShoppingBasketAPI.Models;
 
 namespace ShoppingBasketAPI.Services
 {
-    public class BasketService : IBasketService
+    public class BasketService(ShoppingBasketContext context) : IBasketService
     {
-        private readonly ShoppingBasketContext _context;
+        private readonly ShoppingBasketContext _context = context;
         private const decimal VAT_RATE = 0.20m; // 20% VAT
         private const decimal UK_SHIPPING_COST = 5.99m;
         private const decimal INTERNATIONAL_SHIPPING_COST = 15.99m;
 
-        public BasketService(ShoppingBasketContext context)
-        {
-            _context = context;
-        }
-
         public async Task<BasketResponse> GetBasketAsync(string sessionId)
         {
-            var basket = await GetOrCreateBasketAsync(sessionId);
-            return await MapToBasketResponseAsync(basket);
+            var basket = await this.GetOrCreateBasketAsync(sessionId);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> AddItemAsync(string sessionId, AddItemRequest request)
         {
-            var basket = await GetOrCreateBasketAsync(sessionId);
-            var product = await GetProductAsync(request.ProductId);
+            var basket = await this.GetOrCreateBasketAsync(sessionId);
+            var product = await this.GetProductAsync(request.ProductId);
 
-            var existingItem = await _context.BasketItems
+            var existingItem = await this._context.BasketItems
                 .FirstOrDefaultAsync(bi => bi.BasketId == basket.Id && bi.ProductId == request.ProductId);
 
             if (existingItem != null)
@@ -45,23 +40,23 @@ namespace ShoppingBasketAPI.Services
                     Quantity = request.Quantity,
                     UnitPrice = product.Price
                 };
-                _context.BasketItems.Add(basketItem);
+                this._context.BasketItems.Add(basketItem);
             }
 
             basket.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await this._context.SaveChangesAsync();
 
-            return await MapToBasketResponseAsync(basket);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> AddMultipleItemsAsync(string sessionId, AddMultipleItemsRequest request)
         {
-            var basket = await GetOrCreateBasketAsync(sessionId);
+            var basket = await this.GetOrCreateBasketAsync(sessionId);
 
             foreach (var itemRequest in request.Items)
             {
-                var product = await GetProductAsync(itemRequest.ProductId);
-                var existingItem = await _context.BasketItems
+                var product = await this.GetProductAsync(itemRequest.ProductId);
+                var existingItem = await this._context.BasketItems
                     .FirstOrDefaultAsync(bi => bi.BasketId == basket.Id && bi.ProductId == itemRequest.ProductId);
 
                 if (existingItem != null)
@@ -78,37 +73,29 @@ namespace ShoppingBasketAPI.Services
                         Quantity = itemRequest.Quantity,
                         UnitPrice = product.Price
                     };
-                    _context.BasketItems.Add(basketItem);
+                    this._context.BasketItems.Add(basketItem);
                 }
             }
 
             basket.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await this._context.SaveChangesAsync();
 
-            return await MapToBasketResponseAsync(basket);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> RemoveItemAsync(string sessionId, RemoveItemRequest request)
         {
-            var basket = await _context.Baskets
+            var basket = await this._context.Baskets
                 .Include(b => b.Items)
                 .ThenInclude(bi => bi.Product)
-                .FirstOrDefaultAsync(b => b.SessionId == sessionId);
-
-            if (basket == null)
-                throw new InvalidOperationException("Basket not found");
-
-            var existingItem = await _context.BasketItems
-                .FirstOrDefaultAsync(bi => bi.BasketId == basket.Id && bi.ProductId == request.ProductId);
-
-            if (existingItem == null)
-                throw new InvalidOperationException("Item not found in basket");
-
+                .FirstOrDefaultAsync(b => b.SessionId == sessionId) ?? throw new InvalidOperationException("Basket not found");
+            var existingItem = await this._context.BasketItems
+                .FirstOrDefaultAsync(bi => bi.BasketId == basket.Id && bi.ProductId == request.ProductId) ?? throw new InvalidOperationException("Item not found in basket");
             if (request.Quantity.HasValue)
             {
                 if (request.Quantity.Value >= existingItem.Quantity)
                 {
-                    _context.BasketItems.Remove(existingItem);
+                    this._context.BasketItems.Remove(existingItem);
                 }
                 else
                 {
@@ -118,18 +105,18 @@ namespace ShoppingBasketAPI.Services
             }
             else
             {
-                _context.BasketItems.Remove(existingItem);
+                this._context.BasketItems.Remove(existingItem);
             }
 
             basket.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await this._context.SaveChangesAsync();
 
-            return await MapToBasketResponseAsync(basket);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> AddDiscountCodeAsync(string sessionId, AddDiscountCodeRequest request)
         {
-            var basket = await GetOrCreateBasketAsync(sessionId);
+            var basket = await this.GetOrCreateBasketAsync(sessionId);
 
             // Simple discount code logic - in a real application, this would be more complex
             var discountPercentage = request.DiscountCode.ToUpper() switch
@@ -144,83 +131,76 @@ namespace ShoppingBasketAPI.Services
             basket.DiscountPercentage = discountPercentage;
             basket.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await this._context.SaveChangesAsync();
 
-            return await MapToBasketResponseAsync(basket);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> ClearDiscountCodeAsync(string sessionId)
         {
-            var basket = await _context.Baskets
+            var basket = await this._context.Baskets
                 .Include(b => b.Items)
                 .ThenInclude(bi => bi.Product)
-                .FirstOrDefaultAsync(b => b.SessionId == sessionId);
-
-            if (basket == null)
-                throw new InvalidOperationException("Basket not found");
-
+                .FirstOrDefaultAsync(b => b.SessionId == sessionId) ?? throw new InvalidOperationException("Basket not found");
             basket.DiscountCode = null;
             basket.DiscountPercentage = null;
             basket.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await this._context.SaveChangesAsync();
 
-            return await MapToBasketResponseAsync(basket);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> AddShippingAsync(string sessionId, AddShippingRequest request)
         {
-            var basket = await GetOrCreateBasketAsync(sessionId);
+            var basket = await this.GetOrCreateBasketAsync(sessionId);
 
             basket.ShippingCountry = request.Country;
-            basket.ShippingCost = request.Country.ToUpper() == "UK" ? UK_SHIPPING_COST : INTERNATIONAL_SHIPPING_COST;
+            basket.ShippingCost = request.Country.Equals("UK", StringComparison.CurrentCultureIgnoreCase) ? UK_SHIPPING_COST : INTERNATIONAL_SHIPPING_COST;
             basket.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await this._context.SaveChangesAsync();
 
-            return await MapToBasketResponseAsync(basket);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> GetTotalCostAsync(string sessionId)
         {
-            var basket = await GetOrCreateBasketAsync(sessionId);
-            return await MapToBasketResponseAsync(basket);
+            var basket = await this.GetOrCreateBasketAsync(sessionId);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> GetTotalCostWithoutVatAsync(string sessionId)
         {
-            var basket = await GetOrCreateBasketAsync(sessionId);
-            return await MapToBasketResponseAsync(basket);
+            var basket = await this.GetOrCreateBasketAsync(sessionId);
+            return await this.MapToBasketResponseAsync(basket);
         }
 
         public async Task<BasketResponse> ClearBasketAsync(string sessionId)
         {
-            var basket = await _context.Baskets
+            var basket = await this._context.Baskets
                 .Include(b => b.Items)
                 .ThenInclude(bi => bi.Product)
-                .FirstOrDefaultAsync(b => b.SessionId == sessionId);
-
-            if (basket == null)
-                throw new InvalidOperationException("Basket not found");
+                .FirstOrDefaultAsync(b => b.SessionId == sessionId) ?? throw new InvalidOperationException("Basket not found");
 
             // Remove all items first (cascade delete should handle this, but being explicit)
-            var items = await _context.BasketItems
+            var items = await this._context.BasketItems
                 .Where(bi => bi.BasketId == basket.Id)
                 .ToListAsync();
 
-            _context.BasketItems.RemoveRange(items);
-            
-            // Remove the basket itself
-            _context.Baskets.Remove(basket);
+            this._context.BasketItems.RemoveRange(items);
 
-            await _context.SaveChangesAsync();
+            // Remove the basket itself
+            this._context.Baskets.Remove(basket);
+
+            await this._context.SaveChangesAsync();
 
             // Return an empty basket response since the basket no longer exists
             return new BasketResponse
             {
                 Id = 0,
                 SessionId = sessionId,
-                Items = new List<BasketItemResponse>(),
+                Items = [],
                 DiscountCode = null,
                 DiscountPercentage = null,
                 ShippingCountry = null,
@@ -237,7 +217,7 @@ namespace ShoppingBasketAPI.Services
 
         private async Task<Basket> GetOrCreateBasketAsync(string sessionId)
         {
-            var basket = await _context.Baskets
+            var basket = await this._context.Baskets
                 .Include(b => b.Items)
                 .ThenInclude(bi => bi.Product)
                 .FirstOrDefaultAsync(b => b.SessionId == sessionId);
@@ -245,8 +225,8 @@ namespace ShoppingBasketAPI.Services
             if (basket == null)
             {
                 basket = new Basket { SessionId = sessionId };
-                _context.Baskets.Add(basket);
-                await _context.SaveChangesAsync();
+                this._context.Baskets.Add(basket);
+                await this._context.SaveChangesAsync();
             }
 
             return basket;
@@ -254,7 +234,7 @@ namespace ShoppingBasketAPI.Services
 
         private async Task<Product> GetProductAsync(int productId)
         {
-            var product = await _context.Products.FindAsync(productId);
+            var product = await this._context.Products.FindAsync(productId);
             if (product == null || !product.IsActive)
                 throw new InvalidOperationException($"Product with ID {productId} not found or inactive");
 
@@ -263,7 +243,7 @@ namespace ShoppingBasketAPI.Services
 
         private async Task<BasketResponse> MapToBasketResponseAsync(Basket basket)
         {
-            var basketItems = await _context.BasketItems
+            var basketItems = await this._context.BasketItems
                 .Include(bi => bi.Product)
                 .Where(bi => bi.BasketId == basket.Id)
                 .ToListAsync();

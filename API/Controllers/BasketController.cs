@@ -6,14 +6,9 @@ namespace ShoppingBasketAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class BasketController : ControllerBase
+    public class BasketController(IBasketService basketService) : ControllerBase
     {
-        private readonly IBasketService _basketService;
-
-        public BasketController(IBasketService basketService)
-        {
-            _basketService = basketService;
-        }
+        private readonly IBasketService _basketService = basketService;
 
         /// <summary>
         /// Get the current basket for a session
@@ -23,12 +18,12 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.GetBasketAsync(sessionId);
-                return Ok(basket);
+                var basket = await this._basketService.GetBasketAsync(sessionId);
+                return this.Ok(basket);
             }
             catch
             {
-                return BadRequest(new { error = "An error occurred while retrieving the basket" });
+                return this.BadRequest(new { error = "An error occurred while retrieving the basket" });
             }
         }
 
@@ -40,16 +35,16 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.AddItemAsync(sessionId, request);
-                return Ok(basket);
+                var basket = await this._basketService.AddItemAsync(sessionId, request);
+                return this.Ok(basket);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return this.BadRequest(new { error = ex.Message });
             }
             catch
             {
-                return StatusCode(500, new { error = "An error occurred while adding the item" });
+                return this.StatusCode(500, new { error = "An error occurred while adding the item" });
             }
         }
 
@@ -61,16 +56,16 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.AddMultipleItemsAsync(sessionId, request);
-                return Ok(basket);
+                var basket = await this._basketService.AddMultipleItemsAsync(sessionId, request);
+                return this.Ok(basket);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return this.BadRequest(new { error = ex.Message });
             }
             catch
             {
-                return StatusCode(500, new { error = "An error occurred while adding the items" });
+                return this.StatusCode(500, new { error = "An error occurred while adding the items" });
             }
         }
 
@@ -82,16 +77,16 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.RemoveItemAsync(sessionId, request);
-                return Ok(basket);
+                var basket = await this._basketService.RemoveItemAsync(sessionId, request);
+                return this.Ok(basket);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return this.BadRequest(new { error = ex.Message });
             }
             catch
             {
-                return StatusCode(500, new { error = "An error occurred while removing the item" });
+                return this.StatusCode(500, new { error = "An error occurred while removing the item" });
             }
         }
 
@@ -103,16 +98,16 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.AddDiscountCodeAsync(sessionId, request);
-                return Ok(basket);
+                var basket = await this._basketService.AddDiscountCodeAsync(sessionId, request);
+                return this.Ok(basket);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return this.BadRequest(new { error = ex.Message });
             }
             catch
             {
-                return StatusCode(500, new { error = "An error occurred while applying the discount code" });
+                return this.StatusCode(500, new { error = "An error occurred while applying the discount code" });
             }
         }
 
@@ -124,16 +119,16 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.ClearDiscountCodeAsync(sessionId);
-                return Ok(basket);
+                var basket = await this._basketService.ClearDiscountCodeAsync(sessionId);
+                return this.Ok(basket);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return this.BadRequest(new { error = ex.Message });
             }
             catch
             {
-                return StatusCode(500, new { error = "An error occurred while clearing the discount code" });
+                return this.StatusCode(500, new { error = "An error occurred while clearing the discount code" });
             }
         }
 
@@ -145,16 +140,16 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.AddShippingAsync(sessionId, request);
-                return Ok(basket);
+                var basket = await this._basketService.AddShippingAsync(sessionId, request);
+                return this.Ok(basket);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return this.BadRequest(new { error = ex.Message });
             }
             catch
             {
-                return StatusCode(500, new { error = "An error occurred while adding shipping information" });
+                return this.StatusCode(500, new { error = "An error occurred while adding shipping information" });
             }
         }
 
@@ -166,12 +161,12 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.GetTotalCostAsync(sessionId);
-                return Ok(basket);
+                var basket = await this._basketService.GetTotalCostAsync(sessionId);
+                return this.Ok(basket);
             }
             catch
             {
-                return BadRequest(new { error = "An error occurred while calculating the total" });
+                return this.BadRequest(new { error = "An error occurred while calculating the total" });
             }
         }
 
@@ -183,12 +178,12 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.GetTotalCostWithoutVatAsync(sessionId);
-                return Ok(basket);
+                var basket = await this._basketService.GetTotalCostWithoutVatAsync(sessionId);
+                return this.Ok(basket);
             }
             catch
             {
-                return BadRequest(new { error = "An error occurred while calculating the total without VAT" });
+                return this.BadRequest(new { error = "An error occurred while calculating the total without VAT" });
             }
         }
 
@@ -200,16 +195,16 @@ namespace ShoppingBasketAPI.Controllers
         {
             try
             {
-                var basket = await _basketService.ClearBasketAsync(sessionId);
-                return Ok(basket);
+                var basket = await this._basketService.ClearBasketAsync(sessionId);
+                return this.Ok(basket);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return this.BadRequest(new { error = ex.Message });
             }
             catch
             {
-                return StatusCode(500, new { error = "An error occurred while clearing the basket" });
+                return this.StatusCode(500, new { error = "An error occurred while clearing the basket" });
             }
         }
     }

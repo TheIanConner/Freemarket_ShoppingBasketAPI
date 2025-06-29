@@ -7,14 +7,9 @@ namespace ShoppingBasketAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductsController : ControllerBase
+    public class ProductsController(ShoppingBasketContext context) : ControllerBase
     {
-        private readonly ShoppingBasketContext _context;
-
-        public ProductsController(ShoppingBasketContext context)
-        {
-            _context = context;
-        }
+        private readonly ShoppingBasketContext _context = context;
 
         /// <summary>
         /// Get all active products
@@ -22,12 +17,12 @@ namespace ShoppingBasketAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            var products = await _context.Products
+            var products = await this._context.Products
                 .Where(p => p.IsActive)
                 .OrderBy(p => p.Name)
                 .ToListAsync();
 
-            return Ok(products);
+            return this.Ok(products);
         }
 
         /// <summary>
@@ -36,14 +31,14 @@ namespace ShoppingBasketAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await this._context.Products.FindAsync(id);
 
             if (product == null || !product.IsActive)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(product);
+            return this.Ok(product);
         }
     }
 } 
