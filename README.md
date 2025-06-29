@@ -7,7 +7,7 @@ Root folder/
 ```
 
 API:
-A REST-based Web API written in .NET 8 for an online shopping basket system with comprehensive features including VAT calculations, discounts, and shipping costs.
+A REST-based Web API written in .NET 9 for an online shopping basket system with comprehensive features including VAT calculations, discounts, and shipping costs.
 
 ## Features
 
@@ -30,7 +30,7 @@ The project uses:
 - Entity Framework Core for data access
 - SQLite as the database
 - Swagger/OpenAPI for API documentation
-- .NET 8 - Latest .NET framework
+- .NET 9 - Latest .NET framework
 - ASP.NET Core Web API - REST API framework
 
 General info:
