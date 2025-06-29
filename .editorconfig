@@ -1,0 +1,48 @@
+root = true
+
+[*]
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,vb}]
+dotnet_style_qualification_for_field = true:warning
+dotnet_style_qualification_for_property = true:warning
+dotnet_style_qualification_for_method = true:warning
+dotnet_style_qualification_for_event = true:warning
+
+# Suppress file header requirement
+dotnet_diagnostic.SA1633.severity = none
+dotnet_diagnostic.SA1634.severity = none
+dotnet_diagnostic.SA1635.severity = none
+dotnet_diagnostic.SA1636.severity = none
+dotnet_diagnostic.SA1637.severity = none
+dotnet_diagnostic.SA1638.severity = none
+dotnet_diagnostic.SA1640.severity = none
+dotnet_diagnostic.SA1641.severity = none
+
+# Allow trailing whitespace
+dotnet_diagnostic.SA1028.severity = none
+
+# Suppress specific warnings
+dotnet_diagnostic.SA1518.severity = none # Code should not contain blank lines at end of file
+dotnet_diagnostic.SA1402.severity = none # File may only contain a single type
+dotnet_diagnostic.SA1512.severity = none # Single-line comments should not be followed by blank line
+dotnet_diagnostic.SA1515.severity = none # Single-line comment should be preceded by blank line
+dotnet_diagnostic.SA1111.severity = none # Closing parenthesis should be on line of last parameter
+dotnet_diagnostic.SA1009.severity = none # Closing parenthesis should not be preceded by a space
+dotnet_diagnostic.SA1649.severity = none # File name should match first type name
+dotnet_diagnostic.SA1202.severity = none # Public members should come before private members
+dotnet_diagnostic.SA1413.severity = none # Use trailing comma in multi-line initializers
+
+# Code style rules
+dotnet_diagnostic.SA1200.severity = warning # Using directives should be placed correctly
+dotnet_diagnostic.SA1208.severity = warning # System using directives should be placed before other using directives
+dotnet_diagnostic.SA1210.severity = warning # Using directives should be ordered alphabetically by namespace
+dotnet_diagnostic.SA1516.severity = warning # Elements should be separated by blank line
+dotnet_diagnostic.SA1600.severity = warning # Elements should be documented
+dotnet_diagnostic.SA1602.severity = warning # Enumeration items should be documented
+
+# Suppress documentation requirements for test files
+[Tests/**.cs]
+dotnet_diagnostic.SA1600.severity = none # Elements should be documented 
