@@ -23,6 +23,7 @@ bld/
 *.sln.docstates
 
 # Database files
+*.db
 *.db-shm
 *.db-wal
 
