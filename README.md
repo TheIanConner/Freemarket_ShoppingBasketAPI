@@ -28,6 +28,9 @@ The project uses:
 
 General info:
 
+The Swagger endpoint for this on Azure is
+https://shoppingbasketdemo-api-e6faeee4ghcmebfw.uksouth-01.azurewebsites.net/swagger/
+
 All basket operations return a `BasketResponse` object (see below) which provides key basket information to the frontend. This would save multiple requests e.g. to get the shipping costs, but I've included those API endpoints anyway for demo purposes.
 
 ## Setup and Installation
