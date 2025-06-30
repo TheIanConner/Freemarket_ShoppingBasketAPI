@@ -6,15 +6,13 @@ using ShoppingBasketAPI.Services;
 
 namespace Tests
 {
-    [TestClass]
-    public class BasketServiceTests
+    public class BasketServiceTests : IDisposable
     {
-        private ShoppingBasketContext _context = null!;
-        private BasketService _basketService = null!;
+        private readonly ShoppingBasketContext _context;
+        private readonly BasketService _basketService;
         private const string TestSessionId = "test-session-123";
         
-        [TestInitialize]
-        public void Setup()
+        public BasketServiceTests()
         {
             var options = new DbContextOptionsBuilder<ShoppingBasketContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -26,8 +24,7 @@ namespace Tests
             SeedTestData();
         }
         
-        [TestCleanup]
-        public void Cleanup()
+        public void Dispose()
         {
             _context.Database.EnsureDeleted();
             _context.Dispose();
@@ -50,23 +47,23 @@ namespace Tests
         
         #region GetBasketAsync Tests
         
-        [TestMethod]
+        [Fact]
         public async Task GetBasketAsync_NewSession_ShouldCreateEmptyBasket()
         {
             // Act
             var result = await _basketService.GetBasketAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(TestSessionId, result.SessionId);
-            Assert.AreEqual(0, result.Items.Count);
-            Assert.AreEqual(0, result.Subtotal);
-            Assert.AreEqual(0, result.TotalWithVat);
-            Assert.IsNull(result.DiscountCode);
-            Assert.IsNull(result.ShippingCountry);
+            Assert.NotNull(result);
+            Assert.Equal(TestSessionId, result.SessionId);
+            Assert.Empty(result.Items);
+            Assert.Equal(0, result.Subtotal);
+            Assert.Equal(0, result.TotalWithVat);
+            Assert.Null(result.DiscountCode);
+            Assert.Null(result.ShippingCountry);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task GetBasketAsync_ExistingSession_ShouldReturnExistingBasket()
         {
             // Arrange
@@ -76,17 +73,17 @@ namespace Tests
             var result = await _basketService.GetBasketAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(TestSessionId, result.SessionId);
-            Assert.AreEqual(1, result.Items.Count);
-            Assert.AreEqual(2, result.Items[0].Quantity);
+            Assert.NotNull(result);
+            Assert.Equal(TestSessionId, result.SessionId);
+            Assert.Single(result.Items);
+            Assert.Equal(2, result.Items[0].Quantity);
         }
         
         #endregion
         
         #region AddItemAsync Tests
         
-        [TestMethod]
+        [Fact]
         public async Task AddItemAsync_NewItem_ShouldAddItemToBasket()
         {
             // Arrange
@@ -96,16 +93,16 @@ namespace Tests
             var result = await _basketService.AddItemAsync(TestSessionId, request);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(1, result.Items.Count);
-            Assert.AreEqual(1, result.Items[0].ProductId);
-            Assert.AreEqual("Laptop", result.Items[0].ProductName);
-            Assert.AreEqual(2, result.Items[0].Quantity);
-            Assert.AreEqual(999.99m, result.Items[0].UnitPrice);
-            Assert.AreEqual(1999.98m, result.Items[0].TotalPrice);
+            Assert.NotNull(result);
+            Assert.Single(result.Items);
+            Assert.Equal(1, result.Items[0].ProductId);
+            Assert.Equal("Laptop", result.Items[0].ProductName);
+            Assert.Equal(2, result.Items[0].Quantity);
+            Assert.Equal(999.99m, result.Items[0].UnitPrice);
+            Assert.Equal(1999.98m, result.Items[0].TotalPrice);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddItemAsync_ExistingItem_ShouldIncreaseQuantity()
         {
             // Arrange
@@ -117,32 +114,32 @@ namespace Tests
             var result = await _basketService.AddItemAsync(TestSessionId, additionalRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(1, result.Items.Count);
-            Assert.AreEqual(5, result.Items[0].Quantity); // 2 + 3
-            Assert.AreEqual(4999.95m, result.Items[0].TotalPrice); // 5 * 999.99
+            Assert.NotNull(result);
+            Assert.Single(result.Items);
+            Assert.Equal(5, result.Items[0].Quantity); // 2 + 3
+            Assert.Equal(4999.95m, result.Items[0].TotalPrice); // 5 * 999.99
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddItemAsync_InvalidProduct_ShouldThrowException()
         {
             // Arrange
             var request = new AddItemRequest { ProductId = 999, Quantity = 1 };
             
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _basketService.AddItemAsync(TestSessionId, request)
             );
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddItemAsync_InactiveProduct_ShouldThrowException()
         {
             // Arrange
             var request = new AddItemRequest { ProductId = 5, Quantity = 1 }; // Product 5 is inactive
             
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _basketService.AddItemAsync(TestSessionId, request)
             );
         }
@@ -151,7 +148,7 @@ namespace Tests
         
         #region AddMultipleItemsAsync Tests
         
-        [TestMethod]
+        [Fact]
         public async Task AddMultipleItemsAsync_MultipleNewItems_ShouldAddAllItems()
         {
             // Arrange
@@ -169,20 +166,20 @@ namespace Tests
             var result = await _basketService.AddMultipleItemsAsync(TestSessionId, request);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(3, result.Items.Count);
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Items.Count);
             
             var laptopItem = result.Items.First(i => i.ProductId == 1);
-            Assert.AreEqual(2, laptopItem.Quantity);
+            Assert.Equal(2, laptopItem.Quantity);
             
             var mouseItem = result.Items.First(i => i.ProductId == 2);
-            Assert.AreEqual(3, mouseItem.Quantity);
+            Assert.Equal(3, mouseItem.Quantity);
             
             var keyboardItem = result.Items.First(i => i.ProductId == 3);
-            Assert.AreEqual(1, keyboardItem.Quantity);
+            Assert.Equal(1, keyboardItem.Quantity);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddMultipleItemsAsync_MixOfNewAndExisting_ShouldUpdateQuantities()
         {
             // Arrange
@@ -201,21 +198,21 @@ namespace Tests
             var result = await _basketService.AddMultipleItemsAsync(TestSessionId, request);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(2, result.Items.Count);
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Items.Count);
             
             var laptopItem = result.Items.First(i => i.ProductId == 1);
-            Assert.AreEqual(3, laptopItem.Quantity); // 1 + 2
+            Assert.Equal(3, laptopItem.Quantity); // 1 + 2
             
             var mouseItem = result.Items.First(i => i.ProductId == 2);
-            Assert.AreEqual(1, mouseItem.Quantity);
+            Assert.Equal(1, mouseItem.Quantity);
         }
         
         #endregion
         
         #region RemoveItemAsync Tests
         
-        [TestMethod]
+        [Fact]
         public async Task RemoveItemAsync_PartialQuantity_ShouldReduceQuantity()
         {
             // Arrange
@@ -226,12 +223,12 @@ namespace Tests
             var result = await _basketService.RemoveItemAsync(TestSessionId, removeRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(1, result.Items.Count);
-            Assert.AreEqual(3, result.Items[0].Quantity); // 5 - 2
+            Assert.NotNull(result);
+            Assert.Single(result.Items);
+            Assert.Equal(3, result.Items[0].Quantity); // 5 - 2
         }
         
-        [TestMethod]
+        [Fact]
         public async Task RemoveItemAsync_FullQuantity_ShouldRemoveItem()
         {
             // Arrange
@@ -242,11 +239,11 @@ namespace Tests
             var result = await _basketService.RemoveItemAsync(TestSessionId, removeRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Items.Count);
+            Assert.NotNull(result);
+            Assert.Empty(result.Items);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task RemoveItemAsync_QuantityExceedsAvailable_ShouldRemoveItem()
         {
             // Arrange
@@ -257,11 +254,11 @@ namespace Tests
             var result = await _basketService.RemoveItemAsync(TestSessionId, removeRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Items.Count);
+            Assert.NotNull(result);
+            Assert.Empty(result.Items);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task RemoveItemAsync_NoQuantitySpecified_ShouldRemoveAllOfItem()
         {
             // Arrange
@@ -272,30 +269,30 @@ namespace Tests
             var result = await _basketService.RemoveItemAsync(TestSessionId, removeRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Items.Count);
+            Assert.NotNull(result);
+            Assert.Empty(result.Items);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task RemoveItemAsync_NonExistentItem_ShouldThrowException()
         {
             // Arrange
             var removeRequest = new RemoveItemRequest { ProductId = 1, Quantity = 1 };
             
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _basketService.RemoveItemAsync(TestSessionId, removeRequest)
             );
         }
         
-        [TestMethod]
+        [Fact]
         public async Task RemoveItemAsync_NonExistentBasket_ShouldThrowException()
         {
             // Arrange
             var removeRequest = new RemoveItemRequest { ProductId = 1, Quantity = 1 };
             
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _basketService.RemoveItemAsync("non-existent-session", removeRequest)
             );
         }
@@ -304,7 +301,7 @@ namespace Tests
         
         #region Discount Code Tests
         
-        [TestMethod]
+        [Fact]
         public async Task AddDiscountCodeAsync_ValidCode_ShouldApplyDiscount()
         {
             // Arrange
@@ -315,25 +312,25 @@ namespace Tests
             var result = await _basketService.AddDiscountCodeAsync(TestSessionId, discountRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual("SAVE10", result.DiscountCode);
-            Assert.AreEqual(10.0m, result.DiscountPercentage);
-            Assert.AreEqual(99.999m, result.DiscountAmount); // 10% of 999.99
+            Assert.NotNull(result);
+            Assert.Equal("SAVE10", result.DiscountCode);
+            Assert.Equal(10.0m, result.DiscountPercentage);
+            Assert.Equal(99.999m, result.DiscountAmount); // 10% of 999.99
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddDiscountCodeAsync_InvalidCode_ShouldThrowException()
         {
             // Arrange
             var discountRequest = new AddDiscountCodeRequest { DiscountCode = "INVALID" };
             
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _basketService.AddDiscountCodeAsync(TestSessionId, discountRequest)
             );
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddDiscountCodeAsync_Save20Code_ShouldApply20PercentDiscount()
         {
             // Arrange
@@ -344,13 +341,13 @@ namespace Tests
             var result = await _basketService.AddDiscountCodeAsync(TestSessionId, discountRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual("SAVE20", result.DiscountCode);
-            Assert.AreEqual(20.0m, result.DiscountPercentage);
-            Assert.AreEqual(10.20m, result.DiscountAmount); // 20% of 51.00
+            Assert.NotNull(result);
+            Assert.Equal("SAVE20", result.DiscountCode);
+            Assert.Equal(20.0m, result.DiscountPercentage);
+            Assert.Equal(10.20m, result.DiscountAmount); // 20% of 51.00
         }
         
-        [TestMethod]
+        [Fact]
         public async Task ClearDiscountCodeAsync_WithDiscount_ShouldRemoveDiscount()
         {
             // Arrange
@@ -361,17 +358,17 @@ namespace Tests
             var result = await _basketService.ClearDiscountCodeAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.IsNull(result.DiscountCode);
-            Assert.IsNull(result.DiscountPercentage);
-            Assert.AreEqual(0m, result.DiscountAmount);
+            Assert.NotNull(result);
+            Assert.Null(result.DiscountCode);
+            Assert.Null(result.DiscountPercentage);
+            Assert.Equal(0m, result.DiscountAmount);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task ClearDiscountCodeAsync_NonExistentBasket_ShouldThrowException()
         {
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _basketService.ClearDiscountCodeAsync("non-existent-session")
             );
         }
@@ -380,7 +377,7 @@ namespace Tests
         
         #region Shipping Tests
         
-        [TestMethod]
+        [Fact]
         public async Task AddShippingAsync_UKShipping_ShouldApplyUKRate()
         {
             // Arrange
@@ -390,12 +387,12 @@ namespace Tests
             var result = await _basketService.AddShippingAsync(TestSessionId, shippingRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual("UK", result.ShippingCountry);
-            Assert.AreEqual(5.99m, result.ShippingCost);
+            Assert.NotNull(result);
+            Assert.Equal("UK", result.ShippingCountry);
+            Assert.Equal(5.99m, result.ShippingCost);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddShippingAsync_InternationalShipping_ShouldApplyInternationalRate()
         {
             // Arrange
@@ -405,12 +402,12 @@ namespace Tests
             var result = await _basketService.AddShippingAsync(TestSessionId, shippingRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual("USA", result.ShippingCountry);
-            Assert.AreEqual(15.99m, result.ShippingCost);
+            Assert.NotNull(result);
+            Assert.Equal("USA", result.ShippingCountry);
+            Assert.Equal(15.99m, result.ShippingCost);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task AddShippingAsync_CaseInsensitive_ShouldWorkCorrectly()
         {
             // Arrange
@@ -420,16 +417,16 @@ namespace Tests
             var result = await _basketService.AddShippingAsync(TestSessionId, shippingRequest);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual("uk", result.ShippingCountry);
-            Assert.AreEqual(5.99m, result.ShippingCost);
+            Assert.NotNull(result);
+            Assert.Equal("uk", result.ShippingCountry);
+            Assert.Equal(5.99m, result.ShippingCost);
         }
         
         #endregion
         
         #region Calculation Tests
         
-        [TestMethod]
+        [Fact]
         public async Task BasketCalculations_CompleteScenario_ShouldCalculateCorrectly()
         {
             // Arrange - Add items
@@ -446,28 +443,28 @@ namespace Tests
             var result = await _basketService.GetBasketAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
+            Assert.NotNull(result);
             
             // Subtotal: 999.99 + 51.00 = 1050.99
-            Assert.AreEqual(1050.99m, result.Subtotal);
+            Assert.Equal(1050.99m, result.Subtotal);
             
             // Discount: 10% of 1050.99 = 105.099
-            Assert.AreEqual(105.099m, result.DiscountAmount);
+            Assert.Equal(105.099m, result.DiscountAmount);
             
             // Shipping cost
-            Assert.AreEqual(5.99m, result.ShippingCost);
+            Assert.Equal(5.99m, result.ShippingCost);
             
             // Total without VAT: 1050.99 - 105.099 + 5.99 = 951.881
-            Assert.AreEqual(951.881m, result.TotalWithoutVat);
+            Assert.Equal(951.881m, result.TotalWithoutVat);
             
             // VAT: 20% of 951.881 = 190.3762
-            Assert.AreEqual(190.3762m, result.VatAmount);
+            Assert.Equal(190.3762m, result.VatAmount);
             
             // Total with VAT: 951.881 + 190.3762 = 1142.2572
-            Assert.AreEqual(1142.2572m, result.TotalWithVat);
+            Assert.Equal(1142.2572m, result.TotalWithVat);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task BasketCalculations_WithDiscountedProduct_ShouldNotApplyBasketDiscountToDiscountedItems()
         {
             // Arrange - Add regular item and discounted item
@@ -481,21 +478,21 @@ namespace Tests
             var result = await _basketService.GetBasketAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
+            Assert.NotNull(result);
             
             // Subtotal: 25.50 + 100.00 = 125.50
-            Assert.AreEqual(125.50m, result.Subtotal);
+            Assert.Equal(125.50m, result.Subtotal);
             
             // Discount should only apply to non-discounted items (Mouse: 25.50)
             // 10% of 25.50 = 2.55
-            Assert.AreEqual(2.55m, result.DiscountAmount);
+            Assert.Equal(2.55m, result.DiscountAmount);
         }
         
         #endregion
         
         #region Clear Basket Tests
         
-        [TestMethod]
+        [Fact]
         public async Task ClearBasketAsync_WithItems_ShouldRemoveAllItemsAndBasket()
         {
             // Arrange
@@ -507,23 +504,23 @@ namespace Tests
             var result = await _basketService.ClearBasketAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(TestSessionId, result.SessionId);
-            Assert.AreEqual(0, result.Items.Count);
-            Assert.AreEqual(0, result.Subtotal);
-            Assert.AreEqual(0, result.TotalWithVat);
-            Assert.IsNull(result.DiscountCode);
+            Assert.NotNull(result);
+            Assert.Equal(TestSessionId, result.SessionId);
+            Assert.Empty(result.Items);
+            Assert.Equal(0, result.Subtotal);
+            Assert.Equal(0, result.TotalWithVat);
+            Assert.Null(result.DiscountCode);
             
             // Verify basket is actually deleted from database
             var basketExists = await _context.Baskets.AnyAsync(b => b.SessionId == TestSessionId);
-            Assert.IsFalse(basketExists);
+            Assert.False(basketExists);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task ClearBasketAsync_NonExistentBasket_ShouldThrowException()
         {
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _basketService.ClearBasketAsync("non-existent-session")
             );
         }
@@ -532,7 +529,7 @@ namespace Tests
         
         #region GetTotalCost Tests
         
-        [TestMethod]
+        [Fact]
         public async Task GetTotalCostAsync_ShouldReturnBasketWithCalculations()
         {
             // Arrange
@@ -542,12 +539,12 @@ namespace Tests
             var result = await _basketService.GetTotalCostAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(51.00m, result.Subtotal); // 25.50 * 2
-            Assert.IsTrue(result.TotalWithVat > 0);
+            Assert.NotNull(result);
+            Assert.Equal(51.00m, result.Subtotal); // 25.50 * 2
+            Assert.True(result.TotalWithVat > 0);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task GetTotalCostWithoutVatAsync_ShouldReturnBasketWithCalculations()
         {
             // Arrange
@@ -557,32 +554,32 @@ namespace Tests
             var result = await _basketService.GetTotalCostWithoutVatAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(51.00m, result.Subtotal); // 25.50 * 2
-            Assert.AreEqual(51.00m, result.TotalWithoutVat);
+            Assert.NotNull(result);
+            Assert.Equal(51.00m, result.Subtotal); // 25.50 * 2
+            Assert.Equal(51.00m, result.TotalWithoutVat);
         }
         
         #endregion
         
         #region Edge Cases and Integration Tests
         
-        [TestMethod]
+        [Fact]
         public async Task EmptyBasket_ShouldHaveZeroTotals()
         {
             // Act
             var result = await _basketService.GetBasketAsync(TestSessionId);
             
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Items.Count);
-            Assert.AreEqual(0m, result.Subtotal);
-            Assert.AreEqual(0m, result.DiscountAmount);
-            Assert.AreEqual(0m, result.TotalWithoutVat);
-            Assert.AreEqual(0m, result.VatAmount);
-            Assert.AreEqual(0m, result.TotalWithVat);
+            Assert.NotNull(result);
+            Assert.Empty(result.Items);
+            Assert.Equal(0m, result.Subtotal);
+            Assert.Equal(0m, result.DiscountAmount);
+            Assert.Equal(0m, result.TotalWithoutVat);
+            Assert.Equal(0m, result.VatAmount);
+            Assert.Equal(0m, result.TotalWithVat);
         }
         
-        [TestMethod]
+        [Fact]
         public async Task ConcurrentSessions_ShouldMaintainSeparateBaskets()
         {
             // Arrange
@@ -597,11 +594,11 @@ namespace Tests
             var basket2 = await _basketService.GetBasketAsync(session2);
             
             // Assert
-            Assert.AreEqual(1, basket1.Items.Count);
-            Assert.AreEqual(1, basket1.Items[0].ProductId);
+            Assert.Equal(1, basket1.Items.Count);
+            Assert.Equal(1, basket1.Items[0].ProductId);
             
-            Assert.AreEqual(1, basket2.Items.Count);
-            Assert.AreEqual(2, basket2.Items[0].ProductId);
+            Assert.Equal(1, basket2.Items.Count);
+            Assert.Equal(2, basket2.Items[0].ProductId);
         }
         
         #endregion
